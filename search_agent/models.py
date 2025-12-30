@@ -5,16 +5,19 @@ from pydantic import BaseModel, Field
 
 
 class Citation(BaseModel):
-    source: str
+    location: str = Field(
+        description="Filename or path where the information was found"
+    )
+    text: str = Field(description="Relevant quote or passage from the file")
 
     def __str__(self) -> str:
-        return f"<em>{html.escape(self.source)}</em>\n"
+        return f"<b>{html.escape(self.location)}</b>\n{html.escape(self.text)}\n"
 
 
 class AgentResponse(BaseModel):
     question: str
     answer: str
-    citations: list[Citation]
+    citations: list[Citation] | None = None
 
     def __str__(self) -> str:
         result = f"<b>Вопрос</b>\n{html.escape(self.question)}\n\n<b>Ответ</b>\n{html.escape(self.answer)}"

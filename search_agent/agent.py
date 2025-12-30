@@ -6,7 +6,7 @@ import time
 
 from openai import AsyncOpenAI
 
-from search_agent.models import AgentResponse, AgentResult, UsageStats
+from search_agent.models import AgentResponse, AgentResult, Citation, UsageStats
 from search_agent.prompts import SYSTEM_PROMPT
 from search_agent.tools import TOOLS
 from settings import (
@@ -39,7 +39,7 @@ async def rg_search(
         fixed_string: Treat pattern as fixed string, not regex (default: False)
         file_path: Optional specific file or folder to search. If None, searches DOCS_FOLDER
     """
-    cmd = ["rg", "--line-number", f"--context={context_lines}"]
+    cmd = ["rg", "--line-number", f"--context={context_lines}", "--no-ignore"]
     if ignore_case:
         cmd.append("--ignore-case")
     if fixed_string:
@@ -74,6 +74,58 @@ async def read_lines(start_line: int, end_line: int, file_path: str) -> str:
     return result[:10000]
 
 
+def parse_rg_output(rg_output: str) -> list[Citation]:
+    """Parse ripgrep output to extract citations with file locations and matched text.
+
+    Args:
+        rg_output: Raw output from ripgrep command
+
+    Returns:
+        List of Citation objects with location (filename) and text (matched line)
+    """
+    citations = []
+    seen = set()  # Track unique citations to avoid duplicates
+
+    for line in rg_output.split("\n"):
+        line = line.strip()
+        if not line or line == "--":  # Skip empty lines and separators
+            continue
+
+        # Parse format: "path/to/file.md:123:matched text" (matched line uses :)
+        # Context lines use - instead: "path/to/file.md-123-text" (skip these)
+        # Only process lines that start with the expected path format
+        if not line.startswith("docs/"):
+            continue
+
+        # Split only on first two colons to handle URLs in content
+        parts = line.split(":", 3)
+        if len(parts) < 3:
+            continue  # Context line or invalid format
+
+        file_path = parts[0]
+        line_number = parts[1]
+        text = ":".join(parts[2:]).strip()  # Rejoin in case text contains colons
+
+        # Skip if line_number is not a number (indicates context line with -)
+        if not line_number.isdigit():
+            continue
+
+        # Extract clean filename from path
+        filename = file_path.split("/")[-1]
+
+        # Skip YAML frontmatter (url:, title:, etc.)
+        if text.startswith(("url:", "title:", "---")):
+            continue
+
+        # Create unique key to avoid duplicate citations
+        citation_key = (filename, text)
+        if citation_key not in seen and text:
+            seen.add(citation_key)
+            citations.append(Citation(location=filename, text=text))
+
+    return citations
+
+
 async def execute_tool(name: str, args: dict) -> str:
     if name == "rg_search":
         return await rg_search(**args)
@@ -86,6 +138,7 @@ async def run_agent(query: str, max_iterations: int = 15) -> AgentResult:
     logger.info(f"Running agent for query: {query}")
     stats = UsageStats()
     tool_calls_log = []
+    collected_citations = []  # Collect citations from rg_search results
 
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
@@ -126,12 +179,25 @@ async def run_agent(query: str, max_iterations: int = 15) -> AgentResult:
             tool_calls_log.append({tc.function.name: args})
             result = await execute_tool(tc.function.name, args)
             logger.info(f"{tc.function.name}: tool finished")
+
+            # Parse rg_search results to extract citations
+            if tc.function.name == "rg_search":
+                logger.debug(f"rg_search result preview: {result[:200]}...")
+                if result != "No matches found":
+                    citations_from_result = parse_rg_output(result)
+                    collected_citations.extend(citations_from_result)
+                    logger.info(
+                        f"Extracted {len(citations_from_result)} citations from rg_search"
+                    )
+                else:
+                    logger.info("No matches found for this search")
+
             messages.append({"role": "tool", "tool_call_id": tc.id, "content": result})
 
     messages.append(
         {
             "role": "user",
-            "content": "Now provide your final answer in the required JSON format.",
+            "content": "Now provide your final answer (question and answer only, no citations).",
         }
     )
     logger.info("Cooking json response")
@@ -142,12 +208,23 @@ async def run_agent(query: str, max_iterations: int = 15) -> AgentResult:
     elapsed = time.perf_counter() - start
     stats.add(final_response.usage, elapsed)
 
+    # Add citations from grep results (LLM does not generate citations)
+    parsed_response = final_response.choices[0].message.parsed
+    logger.info(
+        f"Collected {len(collected_citations)} total citations from grep results"
+    )
+    parsed_response.citations = collected_citations[:50]
+    logger.info(f"Added {len(parsed_response.citations)} citations from grep results")
+
     agent_result = AgentResult(
-        response=final_response.choices[0].message.parsed,
+        response=parsed_response,
         usage=stats,
         tool_calls=tool_calls_log,
     )
-    logger.info(f"Agent response: {agent_result.response.model_dump()}")
+    response_data = agent_result.response.model_dump()
+    logger.info(
+        f"Agent response data: {json.dumps(response_data, ensure_ascii=False, indent=2)}"
+    )
     logger.info(f"Agent usage: {agent_result.usage.model_dump()}")
     logger.info(f"Agent tool calls: {agent_result.tool_calls}")
 
@@ -159,10 +236,4 @@ async def run_agent(query: str, max_iterations: int = 15) -> AgentResult:
 
 if __name__ == "__main__":
     query = " ".join(sys.argv[1:])
-    result = asyncio.run(run_agent(query))
-    response_data = result.response.model_dump()
-    logger.info(json.dumps(response_data, ensure_ascii=False, indent=2))
-    logger.info(result.usage)
-    logger.info(
-        f"\nEstimated cost: ${result.usage.cost(INPUT_PRICE, OUTPUT_PRICE):.4f}"
-    )
+    asyncio.run(run_agent(query))
