@@ -33,3 +33,23 @@ python search_agent/agent.py "Your search query here"
 ```
 
 Returns a JSON response with the answer and citations to source files.
+
+## Example
+
+```bash
+python search_agent/agent.py "What are the top technology trends for 2026?"
+```
+
+```json
+{
+  "question": "What are the top technology trends for 2026?",
+  "answer": "The top technology trends for 2026 include AI-powered automation, quantum computing advancements, and sustainable tech solutions.",
+  "citations": [
+    {
+      "location": "tech-trends-2026.pdf",
+      "text": "AI-powered automation continues to dominate enterprise adoption..."
+    }
+    ...
+  ]
+}
+```
