@@ -1,6 +1,6 @@
 # GrepRAG
 
-An AI-powered search agent that uses RAG (Retrieval-Augmented Generation) to search and synthesize information from multiple markdown files using ripgrep.
+An AI-powered search agent that uses RAG (Retrieval-Augmented Generation) to search and synthesize information from PDFs and text files using ugrep.
 
 ## Installation
 
@@ -8,7 +8,11 @@ An AI-powered search agent that uses RAG (Retrieval-Augmented Generation) to sea
 uv sync
 ```
 
-Requires ripgrep (`brew install ripgrep` on macOS).
+Requires ugrep and pdftotext:
+
+```bash
+brew install ugrep poppler
+```
 
 ## Configuration
 
