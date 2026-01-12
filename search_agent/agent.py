@@ -7,7 +7,7 @@ import time
 from openai import AsyncOpenAI
 
 from search_agent.models import AgentResponse, AgentResult, Citation, UsageStats
-from search_agent.prompts import SYSTEM_PROMPT
+from search_agent.prompts import SYSTEM_PROMPT_TEMPLATE
 from search_agent.tools import TOOLS
 from settings import (
     DOCS_FOLDER,
@@ -21,6 +21,21 @@ logger = logging.getLogger(__name__)
 client = AsyncOpenAI(
     base_url="https://openrouter.ai/api/v1", api_key=OPENROUTER_API_KEY
 )
+
+
+async def tree() -> str:
+    """Generate tree output of DOCS_FOLDER structure."""
+    cmd = ["tree", "-L", "2", DOCS_FOLDER]
+    logger.debug(f"tree command: {' '.join(cmd)}")
+    proc = await asyncio.create_subprocess_exec(
+        *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+    )
+    stdout, stderr = await proc.communicate()
+    result = stdout.decode() if stdout else ""
+    logger.debug(f"tree output:\n{result}")
+    if stderr:
+        logger.debug(f"tree stderr: {stderr.decode()}")
+    return result
 
 
 async def rg_search(
@@ -82,44 +97,60 @@ async def read_lines(start_line: int, end_line: int, file_path: str) -> str:
 def parse_rg_output(rg_output: str) -> list[Citation]:
     """Parse ripgrep output to extract citations with file locations and matched text.
 
+    Groups consecutive lines from the same file into single citations,
+    preserving context lines that appear before and after match lines.
+    Blocks are separated by "--" delimiter in ripgrep output.
+
     Args:
-        rg_output: Raw output from ripgrep command
+        rg_output: Raw output from ripgrep/ugrep command
 
     Returns:
-        List of Citation objects with location (filename) and text (matched line)
+        List of Citation objects with location (filename) and grouped text
+
+    >>> output = "docs/FILE.pdf:10:Match\\ndocs/FILE.pdf-11-Context"
+    >>> citations = parse_rg_output(output)
+    >>> len(citations)
+    1
     """
     citations = []
-    seen = set()
-
+    block = []
+    filename = ""
     for line in rg_output.split("\n"):
         line = line.strip()
-        if not line or line == "--":
+        if line == "--" or not line:
+            if block:
+                text = "\n".join(block)
+                citations.append(Citation(location=filename, text=text))
+                block = []
+                filename = ""
             continue
-
         if f"/{DOCS_FOLDER}/" not in line and not line.startswith(f"{DOCS_FOLDER}/"):
             continue
-
         parts = line.split(":", 3)
-        if len(parts) < 3:
-            continue
-
-        file_path = parts[0]
-        line_number = parts[1]
-        text = ":".join(parts[2:]).strip()
-
-        if not line_number.isdigit():
-            continue
-
-        filename = file_path.split("/")[-1]
-
+        if len(parts) >= 3 and parts[1].isdigit():
+            path = parts[0]
+            text = ":".join(parts[2:]).strip()
+        else:
+            parts = line.split("-", 3)
+            if len(parts) < 3 or not parts[1].isdigit():
+                continue
+            path = parts[0]
+            text = "-".join(parts[2:]).strip()
+        name = path.split("/")[-1]
         if text.startswith(("url:", "title:", "---")):
             continue
-
-        key = (filename, text)
-        if key not in seen and text:
-            seen.add(key)
-            citations.append(Citation(location=filename, text=text))
-
+        if not text:
+            continue
+        if filename and filename != name:
+            if block:
+                combined = "\n".join(block)
+                citations.append(Citation(location=filename, text=combined))
+                block = []
+        filename = name
+        block.append(text)
+    if block:
+        text = "\n".join(block)
+        citations.append(Citation(location=filename, text=text))
     return citations
 
 
@@ -136,9 +167,11 @@ async def run_agent(query: str, max_iterations: int = 15) -> AgentResult:
     stats = UsageStats()
     tool_calls_log = []
     collected_citations = []
-
+    structure = await tree()
+    prompt = SYSTEM_PROMPT_TEMPLATE.format(tree=structure)
+    logger.debug(f"System prompt:\n{prompt}")
     messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "system", "content": prompt},
         {"role": "user", "content": query},
     ]
 
