@@ -95,11 +95,13 @@ async def read_lines(start_line: int, end_line: int, file_path: str) -> str:
 
 
 def parse_rg_output(rg_output: str) -> list[Citation]:
-    """Parse ripgrep output to extract citations with file locations and matched text.
+    """Parse ripgrep/ugrep output to extract citations with file locations and matched text.
 
-    Groups consecutive lines from the same file into single citations,
-    preserving context lines that appear before and after match lines.
-    Blocks are separated by "--" delimiter in ripgrep output.
+    Handles two output formats:
+    1. Standard format: path:line:text or path-line-text
+    2. Grouped format: filename on own line, then lines like "  N: text" or "  N- text"
+
+    Groups consecutive lines into single citations. Blocks separated by "--".
 
     Args:
         rg_output: Raw output from ripgrep/ugrep command
@@ -116,40 +118,59 @@ def parse_rg_output(rg_output: str) -> list[Citation]:
     block = []
     filename = ""
     for line in rg_output.split("\n"):
-        line = line.strip()
-        if line == "--" or not line:
+        stripped = line.strip()
+        if stripped == "--":
             if block:
-                text = "\n".join(block)
+                text = " ".join(block)
                 citations.append(Citation(location=filename, text=text))
                 block = []
-                filename = ""
             continue
-        if f"/{DOCS_FOLDER}/" not in line and not line.startswith(f"{DOCS_FOLDER}/"):
-            continue
-        parts = line.split(":", 3)
-        if len(parts) >= 3 and parts[1].isdigit():
-            path = parts[0]
-            text = ":".join(parts[2:]).strip()
-        else:
-            parts = line.split("-", 3)
-            if len(parts) < 3 or not parts[1].isdigit():
+        if f"/{DOCS_FOLDER}/" in stripped or stripped.startswith(f"{DOCS_FOLDER}/"):
+            parts = stripped.split(":", 3)
+            if len(parts) >= 3 and parts[1].isdigit():
+                name = parts[0].split("/")[-1]
+                if filename and filename != name and block:
+                    text = " ".join(block)
+                    citations.append(Citation(location=filename, text=text))
+                    block = []
+                filename = name
+                content = ":".join(parts[2:]).strip()
+                if content and not content.startswith(("url:", "title:", "---")):
+                    block.append(content)
                 continue
-            path = parts[0]
-            text = "-".join(parts[2:]).strip()
-        name = path.split("/")[-1]
-        if text.startswith(("url:", "title:", "---")):
-            continue
-        if not text:
-            continue
-        if filename and filename != name:
-            if block:
-                combined = "\n".join(block)
-                citations.append(Citation(location=filename, text=combined))
+            parts = stripped.split("-", 3)
+            if len(parts) >= 3 and parts[1].isdigit():
+                name = parts[0].split("/")[-1]
+                if filename and filename != name and block:
+                    text = " ".join(block)
+                    citations.append(Citation(location=filename, text=text))
+                    block = []
+                filename = name
+                content = "-".join(parts[2:]).strip()
+                if content and not content.startswith(("url:", "title:", "---")):
+                    block.append(content)
+                continue
+            name = stripped.split("/")[-1]
+            if filename and filename != name and block:
+                text = " ".join(block)
+                citations.append(Citation(location=filename, text=text))
                 block = []
-        filename = name
-        block.append(text)
+            filename = name
+            continue
+        if not filename:
+            continue
+        content = None
+        for sep in [":", "-"]:
+            idx = stripped.find(sep)
+            if idx > 0 and stripped[:idx].strip().isdigit():
+                content = stripped[idx + 1 :].strip()
+                break
+        if content is None:
+            content = stripped
+        if content and not content.startswith(("url:", "title:", "---")):
+            block.append(content)
     if block:
-        text = "\n".join(block)
+        text = " ".join(block)
         citations.append(Citation(location=filename, text=text))
     return citations
 

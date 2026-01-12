@@ -108,7 +108,7 @@ class TestParseRgOutput:
 
     def test_extracts_filename_from_full_path(self) -> None:
         suffix = random_suffix()
-        output = f"""{DOCS_FOLDER}/subdir/REPORT_{suffix}.pdf:1:Some text
+        output = f"""{DOCS_FOLDER}/subdir/REPORT_{suffix}.pdf:42:Some text
 """
         citations = parse_rg_output(output)
         assert_that(
@@ -120,6 +120,30 @@ class TestParseRgOutput:
             citations[0].location,
             equal_to(f"REPORT_{suffix}.pdf"),
             "expected only filename without path",
+        )
+
+    def test_parses_grouped_format_with_filename_header(self) -> None:
+        suffix = random_suffix()
+        output = f"""{DOCS_FOLDER}/GROUPED_{suffix}.pdf
+     1- First line
+     2: Second line match
+     3- Third line
+"""
+        citations = parse_rg_output(output)
+        assert_that(
+            len(citations),
+            equal_to(1),
+            "expected single citation from grouped format",
+        )
+        assert_that(
+            citations[0].location,
+            equal_to(f"GROUPED_{suffix}.pdf"),
+            "expected filename from header line",
+        )
+        assert_that(
+            "First line" in citations[0].text and "Second line" in citations[0].text,
+            equal_to(True),
+            "expected all lines joined in text",
         )
 
     def test_filters_out_metadata_lines_starting_with_url(self) -> None:
