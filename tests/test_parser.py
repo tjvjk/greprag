@@ -105,3 +105,16 @@ docs/empty.pdf:More content
         assert "AI-powered" in citations[0].text, (
             "expected hyphens in content preserved"
         )
+
+    def test_handles_hyphens_in_filename(self) -> None:
+        output = """docs/ACTIVATE - Technology & Media Outlook 2026.pdf:First line
+docs/ACTIVATE - Technology & Media Outlook 2026.pdf-Second line
+"""
+        parser = UgrepParser()
+        citations = parser.parse(output)
+        assert len(citations) == 1, "expected single citation"
+        assert citations[0].location == "ACTIVATE - Technology & Media Outlook 2026.pdf", (
+            "expected full filename with hyphens preserved"
+        )
+        assert "First line" in citations[0].text, "expected content parsed correctly"
+        assert "Second line" in citations[0].text, "expected context line parsed correctly"

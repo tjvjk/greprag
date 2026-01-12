@@ -84,21 +84,23 @@ class UgrepParser(Parser):
             return
         if "/" not in stripped:
             return
-        for sep in (":", "-"):
-            idx = stripped.find(sep)
+        for ext in (".pdf", ".txt", ".md"):
+            idx = stripped.find(ext)
             if idx > 0:
-                path = stripped[:idx]
-                content = stripped[idx + 1 :].strip()
-                filename = path.split("/")[-1]
-                if self._filename != filename:
-                    self._flush()
-                    self._filename = filename
-                    self._block = Block(filename)
-                if self._block is None:
-                    self._block = Block(filename)
-                if content:
-                    self._block.append(content)
-                return
+                sep_idx = idx + len(ext)
+                if sep_idx < len(stripped) and stripped[sep_idx] in (":", "-"):
+                    path = stripped[:sep_idx]
+                    content = stripped[sep_idx + 1 :].strip()
+                    filename = path.split("/")[-1]
+                    if self._filename != filename:
+                        self._flush()
+                        self._filename = filename
+                        self._block = Block(filename)
+                    if self._block is None:
+                        self._block = Block(filename)
+                    if content:
+                        self._block.append(content)
+                    return
 
     def _flush(self) -> None:
         """Emit current block as citation if non-empty."""
