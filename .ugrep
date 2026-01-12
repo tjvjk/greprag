@@ -1,0 +1,10 @@
+color
+pretty
+no-tree
+context=3
+ignore-case
+zmax=1
+sort=name
+
+# pdf searching
+filter=pdf:pdftotext % -
