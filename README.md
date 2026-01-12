@@ -20,10 +20,10 @@ Place your PDFs and text files in the `docs/` folder, or configure `DOCS_FOLDER`
 
 ## Configuration
 
-Create a `.env` file:
+Copy `.env.example` to `.env` and add your API key:
 
 ```bash
-OPENROUTER_API_KEY=your_api_key_here
+cp .env.example .env
 ```
 
 The default model is `x-ai/grok-4.1-fast`. Change `MODEL` in `settings.py` to use a different model from OpenRouter.
