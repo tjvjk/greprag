@@ -26,6 +26,8 @@ Create a `.env` file:
 OPENROUTER_API_KEY=your_api_key_here
 ```
 
+The default model is `x-ai/grok-4.1-fast`. Change `MODEL` in `settings.py` to use a different model from OpenRouter.
+
 ## Usage
 
 ```bash

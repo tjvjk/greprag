@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import final
 
 from search_agent.models import Citation
+from settings import FILE_EXTENSIONS
 
 
 class Parser(ABC):
@@ -84,7 +85,7 @@ class UgrepParser(Parser):
             return
         if "/" not in stripped:
             return
-        for ext in (".pdf", ".txt", ".md"):
+        for ext in FILE_EXTENSIONS:
             idx = stripped.find(ext)
             if idx > 0:
                 sep_idx = idx + len(ext)
