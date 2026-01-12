@@ -3,7 +3,7 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "rg_search",
-            "description": "Search for pattern in text files using ripgrep. By default searches all files in the docs folder. You can optionally specify a file_path to search a specific file or subfolder.",
+            "description": "Search for pattern in text files and PDFs using ugrep. By default searches all files in the docs folder. You can optionally specify a file_path to search a specific file or subfolder.",
             "parameters": {
                 "type": "object",
                 "properties": {

@@ -11,5 +11,6 @@ wheels/
 .venv
 .env
 
-docs/*.md
+*.md
+*.pdf
 *.log

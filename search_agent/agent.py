@@ -30,7 +30,7 @@ async def rg_search(
     fixed_string: bool = False,
     file_path: str | None = None,
 ) -> str:
-    """Search for pattern using ripgrep.
+    """Search for pattern using ugrep with PDF support.
 
     Args:
         pattern: Regex pattern to search for
@@ -39,20 +39,25 @@ async def rg_search(
         fixed_string: Treat pattern as fixed string, not regex (default: False)
         file_path: Optional specific file or folder to search. If None, searches DOCS_FOLDER
     """
-    cmd = ["rg", "--line-number", f"--context={context_lines}", "--no-ignore"]
+    cmd = [
+        "ug",
+        "-r",
+        "--line-number",
+        f"--context={context_lines}",
+        "--filter=pdf:pdftotext % -",
+    ]
     if ignore_case:
         cmd.append("--ignore-case")
     if fixed_string:
         cmd.append("--fixed-strings")
 
-    # Default to searching the docs folder if no specific file provided
     search_target = file_path if file_path else DOCS_FOLDER
     cmd.extend([pattern, search_target])
 
     proc = await asyncio.create_subprocess_exec(
-        *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+        *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL
     )
-    stdout, stderr = await proc.communicate()
+    stdout, _ = await proc.communicate()
     result = stdout.decode() if stdout else "No matches found"
     return result[:10000]
 
@@ -69,8 +74,8 @@ async def read_lines(start_line: int, end_line: int, file_path: str) -> str:
     proc = await asyncio.create_subprocess_exec(
         *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
     )
-    stdout, stderr = await proc.communicate()
-    result = stdout.decode() if stdout else ""
+    stdout, _ = await proc.communicate()
+    result = stdout.decode(errors="replace") if stdout else ""
     return result[:10000]
 
 
@@ -84,43 +89,35 @@ def parse_rg_output(rg_output: str) -> list[Citation]:
         List of Citation objects with location (filename) and text (matched line)
     """
     citations = []
-    seen = set()  # Track unique citations to avoid duplicates
+    seen = set()
 
     for line in rg_output.split("\n"):
         line = line.strip()
-        if not line or line == "--":  # Skip empty lines and separators
+        if not line or line == "--":
             continue
 
-        # Parse format: "path/to/file.md:123:matched text" (matched line uses :)
-        # Context lines use - instead: "path/to/file.md-123-text" (skip these)
-        # Only process lines that start with the expected path format
-        if not line.startswith("docs/"):
+        if f"/{DOCS_FOLDER}/" not in line and not line.startswith(f"{DOCS_FOLDER}/"):
             continue
 
-        # Split only on first two colons to handle URLs in content
         parts = line.split(":", 3)
         if len(parts) < 3:
-            continue  # Context line or invalid format
+            continue
 
         file_path = parts[0]
         line_number = parts[1]
-        text = ":".join(parts[2:]).strip()  # Rejoin in case text contains colons
+        text = ":".join(parts[2:]).strip()
 
-        # Skip if line_number is not a number (indicates context line with -)
         if not line_number.isdigit():
             continue
 
-        # Extract clean filename from path
         filename = file_path.split("/")[-1]
 
-        # Skip YAML frontmatter (url:, title:, etc.)
         if text.startswith(("url:", "title:", "---")):
             continue
 
-        # Create unique key to avoid duplicate citations
-        citation_key = (filename, text)
-        if citation_key not in seen and text:
-            seen.add(citation_key)
+        key = (filename, text)
+        if key not in seen and text:
+            seen.add(key)
             citations.append(Citation(location=filename, text=text))
 
     return citations
@@ -138,7 +135,7 @@ async def run_agent(query: str, max_iterations: int = 15) -> AgentResult:
     logger.info(f"Running agent for query: {query}")
     stats = UsageStats()
     tool_calls_log = []
-    collected_citations = []  # Collect citations from rg_search results
+    collected_citations = []
 
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
@@ -180,7 +177,6 @@ async def run_agent(query: str, max_iterations: int = 15) -> AgentResult:
             result = await execute_tool(tc.function.name, args)
             logger.info(f"{tc.function.name}: tool finished")
 
-            # Parse rg_search results to extract citations
             if tc.function.name == "rg_search":
                 logger.debug(f"rg_search result preview: {result[:200]}...")
                 if result != "No matches found":
@@ -208,7 +204,6 @@ async def run_agent(query: str, max_iterations: int = 15) -> AgentResult:
     elapsed = time.perf_counter() - start
     stats.add(final_response.usage, elapsed)
 
-    # Add citations from grep results (LLM does not generate citations)
     parsed_response = final_response.choices[0].message.parsed
     logger.info(
         f"Collected {len(collected_citations)} total citations from grep results"

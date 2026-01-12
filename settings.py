@@ -9,7 +9,7 @@ load_dotenv()
 
 # agent setup
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-DOCS_FOLDER = "docs"
+DOCS_FOLDER = "docs/trends 2026"
 MODEL = "x-ai/grok-4.1-fast"
 INPUT_PRICE = 0.2
 OUTPUT_PRICE = 0.5
