@@ -14,6 +14,10 @@ Requires ugrep and pdftotext:
 brew install ugrep poppler
 ```
 
+## Documents
+
+Place your PDFs and text files in the `docs/` folder, or configure `DOCS_FOLDER` in `settings.py` to point to an existing folder.
+
 ## Configuration
 
 Create a `.env` file:
