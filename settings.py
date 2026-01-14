@@ -15,6 +15,11 @@ MODEL = "x-ai/grok-4.1-fast"
 INPUT_PRICE = 0.2
 OUTPUT_PRICE = 0.5
 
+# telegram bot setup
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+DAILY_QUERY_LIMIT = 10
+TELEGRAM_BOT_NAME = "@ponaehaliam_bot"
+
 # logging setup
 LOGS_DIR = Path("logs")
 LOG_FILE = LOGS_DIR / "bot.log"

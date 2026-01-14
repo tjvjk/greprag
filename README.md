@@ -30,11 +30,29 @@ The default model is `x-ai/grok-4.1-fast`. Change `MODEL` in `settings.py` to us
 
 ## Usage
 
+### Command Line
+
 ```bash
 python search_agent/agent.py "Your search query here"
 ```
 
 Returns a JSON response with the answer and citations to source files.
+
+### Telegram Bot
+
+Add your bot token to `.env`:
+
+```
+TELEGRAM_BOT_TOKEN=your_token_here
+```
+
+Start the bot:
+
+```bash
+python -m telegram_bot.bot
+```
+
+Send any text message to the bot to search your documents. Each user gets 10 queries per day.
 
 ## Example
 
