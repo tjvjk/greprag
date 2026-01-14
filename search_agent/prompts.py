@@ -64,7 +64,7 @@ Note: Do NOT include citations in your response. Citations will be automatically
 - Extract file paths from rg_search results (format: "docs/folder/filename.ext:line_number:content")
 - Always respond in the language of the request
 - If initial search yields few results, expand search terms and try word stems
-- Do not use markdown formatting in the answer text
+- Format text like a book or academic paper: use clear paragraphs separated by blank lines, minimal formatting, no emojis, use numbered lists only when listing steps or procedures
 - Synthesize information from multiple sources when possible
 
 # Supported file types
@@ -72,32 +72,27 @@ Note: Do NOT include citations in your response. Citations will be automatically
 - PDF files: text extracted automatically during search
 
 # Example search workflow
-**Query:** Какие методы мотивации учеников используются в педагогике?
+**Query:** Как открыть ИП в Армении?
 
 **Search execution:**
-1. rg_search "мотивац" → found 45 matches across 12 files
-2. rg_search "стимул" → found 23 matches across 8 files
-3. rg_search "побуждение|заинтересован" → found 18 matches across 6 files
+1. rg_search "ИП" → found 52 matches across 8 files
+2. rg_search "предприниматель" → found 34 matches across 6 files
+3. rg_search "регистрац" → found 28 matches across 5 files
 4. read_lines from top 3 most relevant files for more context
 
 **Answer:**
 
-В педагогической литературе выделяются несколько основных подходов к мотивации учеников:
+Открытие ИП в Армении — простая административная процедура, занимающая 15-30 минут. Государственная пошлина составляет 3000 AMD. Иностранцы могут регистрировать ИП наравне с гражданами страны.
 
-ВНУТРЕННЯЯ МОТИВАЦИЯ:
-- Развитие познавательного интереса через связь с реальной жизнью
-- Создание ситуаций успеха и достижений
-- Поощрение самостоятельности и творчества
-- Использование проектной деятельности
+Перед подачей заявления рекомендуется подготовить два ключевых документа. Во-первых, нотариально заверенный перевод загранпаспорта на армянский язык, который оформляется за 3000-5000 AMD в течение одного дня. Во-вторых, SSN (социальный номер) — хотя поле не является обязательным, его отсутствие может создать сложности при уплате социальных взносов, открытии банковских счетов и подаче отчётности.
 
-ВНЕШНЯЯ МОТИВАЦИЯ:
-- Система поощрений и наград (но с осторожностью)
-- Соревновательные элементы
-- Социальное одобрение
-- Четкая постановка целей
+Регистрацию можно пройти в нескольких местах: Государственный регистр юридических лиц на проспекте Комитаса 49/3 (рекомендуется приходить к 9:00 из-за очередей), Единый центр общественных услуг на улице Вазгена Саргсяна 3, а также частные компании вроде BSW, которые берут дополнительно 1500 AMD за услуги.
 
-СОВРЕМЕННЫЕ ПОДХОДЫ:
-- Геймификация обучения
-- Персонализация учебного процесса
-- Развитие внутренней мотивации важнее внешней
+Процедура регистрации включает четыре шага:
+1. Личная явка с документами (онлайн-регистрация недоступна)
+2. Заполнение формы с выбором кодов КВЭД
+3. Оплата государственной пошлины
+4. Получение сертификата ИП
+
+После регистрации необходимо открыть расчётный счёт в банке (сообщество рекомендует Evocabank или Ameriabank), выбрать налоговый режим и настроить подачу отчётности через личный кабинет налоговой службы. По умолчанию применяется налог с оборота в размере 5%.
 """
