@@ -2,7 +2,7 @@ import asyncio
 from abc import ABC, abstractmethod
 from typing import final
 
-from settings import DOCS_FOLDER
+import settings
 
 MAX_OUTPUT_CHARS = 10000
 
@@ -29,7 +29,7 @@ class UgrepSearch(Search):
     """
 
     def __init__(self) -> None:
-        self._folder = DOCS_FOLDER
+        self._folder = settings.DOCS_FOLDER
 
     async def execute(self, pattern: str, path: str | None) -> str:
         """Execute ugrep search and return truncated output."""

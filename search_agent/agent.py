@@ -11,30 +11,24 @@ from search_agent.parser import UgrepParser
 from search_agent.prompts import SYSTEM_PROMPT_TEMPLATE
 from search_agent.tools import TOOLS
 from search_agent.ugrep import UgrepSearch
-from settings import (
-    DOCS_FOLDER,
-    INPUT_PRICE,
-    MODEL,
-    OPENROUTER_API_KEY,
-    OUTPUT_PRICE,
-)
+import settings
 
 logger = logging.getLogger(__name__)
 client = AsyncOpenAI(
-    base_url="https://openrouter.ai/api/v1", api_key=OPENROUTER_API_KEY
+    base_url="https://openrouter.ai/api/v1", api_key=settings.OPENROUTER_API_KEY
 )
 
 
 async def tree() -> str:
     """Generate tree output of DOCS_FOLDER structure."""
-    cmd = ["tree", "-L", "2", DOCS_FOLDER]
+    cmd = ["tree", "-L", "2", settings.DOCS_FOLDER]
     logger.debug(f"tree command: {' '.join(cmd)}")
     proc = await asyncio.create_subprocess_exec(
         *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
     )
     stdout, stderr = await proc.communicate()
     result = stdout.decode() if stdout else ""
-    logger.debug(f"tree output:\n{result}")
+    # logger.debug(f"tree output:\n{result}")
     if stderr:
         logger.debug(f"tree stderr: {stderr.decode()}")
     return result
@@ -58,7 +52,7 @@ async def run_agent(query: str, max_iterations: int = 15) -> AgentResult:
     for _ in range(max_iterations):
         start = time.perf_counter()
         response = await client.chat.completions.create(
-            model=MODEL, messages=messages, tools=TOOLS
+            model=settings.MODEL, messages=messages, tools=TOOLS
         )
         elapsed = time.perf_counter() - start
         stats.add(response.usage, elapsed)
@@ -108,7 +102,7 @@ async def run_agent(query: str, max_iterations: int = 15) -> AgentResult:
     logger.info("Cooking json response")
     start = time.perf_counter()
     final_response = await client.beta.chat.completions.parse(
-        model=MODEL, messages=messages, response_format=AgentResponse
+        model=settings.MODEL, messages=messages, response_format=AgentResponse
     )
     elapsed = time.perf_counter() - start
     stats.add(final_response.usage, elapsed)
@@ -116,7 +110,7 @@ async def run_agent(query: str, max_iterations: int = 15) -> AgentResult:
     logger.info(
         f"Collected {len(collected_citations)} total citations from search results"
     )
-    parsed_response.citations = collected_citations[:50]
+    parsed_response.citations = collected_citations[:100]
     logger.info(f"Added {len(parsed_response.citations)} citations from search results")
     agent_result = AgentResult(
         response=parsed_response,
@@ -129,7 +123,7 @@ async def run_agent(query: str, max_iterations: int = 15) -> AgentResult:
     )
     logger.info(f"Agent usage: {agent_result.usage.model_dump()}")
     logger.info(f"Agent tool calls: {agent_result.tool_calls}")
-    cost = agent_result.usage.cost(INPUT_PRICE, OUTPUT_PRICE)
+    cost = agent_result.usage.cost(settings.INPUT_PRICE, settings.OUTPUT_PRICE)
     logger.info(f"Agent estimated cost: ${cost:.4f}")
     return agent_result
 
