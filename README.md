@@ -60,6 +60,8 @@ python search_agent/agent.py "What are the top technology trends for 2026?"
 
 Evaluate search quality using the [BRIGHT](https://github.com/xlang-ai/BRIGHT) benchmark with Recall@10 metric.
 
+### GrepRAG Benchmark
+
 Install benchmark dependencies:
 
 ```bash
@@ -69,13 +71,31 @@ uv sync --extra benchmark
 Run benchmark:
 
 ```bash
-uv run python -m tests.bright_benchmark --split biology --limit 5
+uv run python -m benchmark.grep --split biology --limit 5
 ```
 
 Save results to file:
 
 ```bash
-uv run python -m tests.bright_benchmark --split biology --output "results/$(date +%Y%m%d%H%M)_biology.json"
+uv run python -m benchmark.grep --split biology --output "results/$(date +%Y%m%d%H%M)_grep_biology.json"
 ```
 
-Available splits: `biology`, `earth_science`, `economics`, `psychology`, `robotics`, `stackoverflow`, `sustainable_living`, `leetcode`, `pony`, `aops`, `theoremqa_theorems`, `theoremqa_questions`.
+### Vector Store Benchmark
+
+Compare GrepRAG against a traditional vector store using semantic embeddings.
+
+Run benchmark:
+
+```bash
+uv run python -m benchmark.vector --split biology --limit 5
+```
+
+Save results to file:
+
+```bash
+uv run python -m benchmark.vector --split biology --output "results/$(date +%Y%m%d%H%M)_vector_biology.json"
+```
+
+### Available Splits
+
+`biology`, `earth_science`, `economics`, `psychology`, `robotics`, `stackoverflow`, `sustainable_living`, `leetcode`, `pony`, `aops`, `theoremqa_theorems`, `theoremqa_questions`.
