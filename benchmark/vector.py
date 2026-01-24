@@ -1,5 +1,5 @@
 """
-Vector store benchmark using BRIGHT dataset for Recall@10 evaluation.
+Vector store benchmark using BRIGHT dataset for Recall@K evaluation.
 
 Compares semantic vector retrieval against the greprag search agent.
 
@@ -37,12 +37,12 @@ class VectorBenchmark(BaseBenchmark):
     BRIGHT benchmark runner for vector store evaluation.
 
     Loads BRIGHT dataset, indexes documents using embeddings,
-    and evaluates retrieval quality using Recall@10.
+    and evaluates retrieval quality using Recall@K.
 
     Example:
         >>> benchmark = VectorBenchmark("biology")
         >>> result = benchmark.run(limit=5)
-        >>> print(f"Recall@10: {result.recall:.4f}")
+        >>> print(f"Recall@K: {result.recall:.4f}")
     """
 
     def __init__(self, split: str, db: str | None = None):
@@ -143,7 +143,7 @@ class VectorBenchmark(BaseBenchmark):
                     "query": r.query,
                     "gold_ids": r.gold,
                     "retrieved_ids": r.retrieved,
-                    "recall_at_10": r.recall,
+                    "recall_at_k": r.recall,
                     "error": r.error,
                 }
                 for r in results
@@ -201,11 +201,11 @@ def main() -> None:
         print(f"Vector Store Benchmark Results: {result.split}")
         print(f"{'=' * 60}")
         print(f"Method: {result.method}")
-        print(f"Mean Recall@10: {result.recall:.4f}")
+        print(f"Mean Recall@{TOP_K}: {result.recall:.4f}")
         print(f"Evaluated queries: {result.evaluated}")
         print(f"{'=' * 60}\n")
         for q in result.queries:
-            status = "ERROR" if q["error"] else f"R@10={q['recall_at_10']:.3f}"
+            status = "ERROR" if q["error"] else f"R@{TOP_K}={q['recall_at_k']:.3f}"
             print(f"  [{q['query_id']}] {status}")
 
 

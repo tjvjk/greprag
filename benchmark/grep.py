@@ -1,5 +1,5 @@
 """
-GrepRAG benchmark using BRIGHT dataset for Recall@10 evaluation.
+GrepRAG benchmark using BRIGHT dataset for Recall@K evaluation.
 
 Evaluates the greprag search agent on complex reasoning queries.
 
@@ -36,7 +36,7 @@ class AgentQueryResult:
     query: str
     gold_ids: list[str]
     retrieved_ids: list[str]
-    recall_at_10: float
+    recall_at_k: float
     error: str | None = None
 
 
@@ -45,7 +45,7 @@ class AgentBenchmarkResult:
     """Overall agent benchmark result."""
 
     split: str
-    mean_recall_at_10: float
+    mean_recall_at_k: float
     evaluated_queries: int
     total_queries: int
     queries: list[dict] = field(default_factory=list)
@@ -161,18 +161,18 @@ class GrepBenchmark:
             citations = result.response.citations or []
             retrieved = self._extract(citations)
             logger.debug(f"Gold IDs: {gold[:5]}")
-            logger.debug(f"Retrieved IDs (top 10): {retrieved[:10]}")
+            logger.debug(f"Retrieved IDs (top {TOP_K}): {retrieved[:TOP_K]}")
             recall = recall_at_k(retrieved, gold, k=TOP_K)
             logger.info(
                 f"Query {identifier}: retrieved {len(retrieved)} docs, "
-                f"gold {len(gold)} docs, recall@10={recall:.3f}"
+                f"gold {len(gold)} docs, recall@{TOP_K}={recall:.3f}"
             )
             return AgentQueryResult(
                 query_id=identifier,
                 query=text,
                 gold_ids=gold,
                 retrieved_ids=retrieved,
-                recall_at_10=recall,
+                recall_at_k=recall,
             )
         except Exception as exc:
             logger.error(f"Error evaluating query {identifier}: {exc}")
@@ -181,7 +181,7 @@ class GrepBenchmark:
                 query=text,
                 gold_ids=gold,
                 retrieved_ids=[],
-                recall_at_10=0.0,
+                recall_at_k=0.0,
                 error=str(exc),
             )
 
@@ -213,7 +213,7 @@ class GrepBenchmark:
             recall = mean_recall_at_k(data, k=TOP_K)
             output = AgentBenchmarkResult(
                 split=self._split,
-                mean_recall_at_10=recall,
+                mean_recall_at_k=recall,
                 evaluated_queries=len(results),
                 total_queries=len(queries),
                 queries=[
@@ -222,14 +222,14 @@ class GrepBenchmark:
                         "query": r.query,
                         "gold_ids": r.gold_ids,
                         "retrieved_ids": r.retrieved_ids,
-                        "recall_at_10": r.recall_at_10,
+                        "recall_at_k": r.recall_at_k,
                         "error": r.error,
                     }
                     for r in results
                 ],
             )
             logger.info(
-                f"Benchmark complete: mean_recall@10={recall:.4f} "
+                f"Benchmark complete: mean_recall@{TOP_K}={recall:.4f} "
                 f"({len(results)} queries)"
             )
             return output
@@ -250,7 +250,7 @@ def save(result: AgentBenchmarkResult, path: str) -> None:
     data = {
         "split": result.split,
         "method": "greprag_agent",
-        "mean_recall_at_10": result.mean_recall_at_10,
+        "mean_recall_at_k": result.mean_recall_at_k,
         "evaluated_queries": result.evaluated_queries,
         "total_queries": result.total_queries,
         "queries": result.queries,
@@ -306,11 +306,11 @@ async def main() -> None:
             print(f"\n{'=' * 60}")
             print(f"GrepRAG Benchmark Results: {result.split}")
             print(f"{'=' * 60}")
-            print(f"Mean Recall@10: {result.mean_recall_at_10:.4f}")
+            print(f"Mean Recall@{TOP_K}: {result.mean_recall_at_k:.4f}")
             print(f"Evaluated queries: {result.evaluated_queries}")
             print(f"{'=' * 60}\n")
             for q in result.queries:
-                status = "ERROR" if q["error"] else f"R@10={q['recall_at_10']:.3f}"
+                status = "ERROR" if q["error"] else f"R@{TOP_K}={q['recall_at_k']:.3f}"
                 print(f"  [{q['query_id']}] {status}")
 
     finally:

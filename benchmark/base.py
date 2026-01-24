@@ -145,7 +145,7 @@ def save(result: BenchmarkResult, path: str) -> None:
     data = {
         "split": result.split,
         "method": result.method,
-        "mean_recall_at_10": result.recall,
+        "mean_recall_at_k": result.recall,
         "evaluated_queries": result.evaluated,
         "total_queries": result.total,
         "timestamp": result.timestamp,
