@@ -69,13 +69,13 @@ uv sync --extra benchmark
 Run benchmark:
 
 ```bash
-python -m tests.bright_benchmark --split biology --limit 5
+uv run python -m tests.bright_benchmark --split biology --limit 5
 ```
 
 Save results to file:
 
 ```bash
-python -m tests.bright_benchmark --split biology --output results/biology.json
+uv run python -m tests.bright_benchmark --split biology --output "results/$(date +%Y%m%d%H%M)_biology.json"
 ```
 
 Available splits: `biology`, `earth_science`, `economics`, `psychology`, `robotics`, `stackoverflow`, `sustainable_living`, `leetcode`, `pony`, `aops`, `theoremqa_theorems`, `theoremqa_questions`.

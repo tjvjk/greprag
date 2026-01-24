@@ -16,7 +16,6 @@ import logging
 import shutil
 import tempfile
 from dataclasses import dataclass, field
-from datetime import datetime
 from pathlib import Path
 
 from datasets import load_dataset
@@ -267,11 +266,11 @@ class BrightBenchmark:
         self._patch_settings()
 
         try:
-            results = []
-            for i, query_data in enumerate(queries):
-                logger.info(f"Progress: {i + 1}/{len(queries)}")
-                result = await self.evaluate_query(query_data)
-                results.append(result)
+            sem = asyncio.Semaphore(5)
+            async def limited(query_data: dict) -> QueryResult:
+                async with sem:
+                    return await self.evaluate_query(query_data)
+            results = await asyncio.gather(*[limited(q) for q in queries])
             recall_data = [
                 {"retrieved_ids": r.retrieved_ids, "gold_ids": r.gold_ids}
                 for r in results
@@ -316,9 +315,6 @@ def save_results(result: BenchmarkResult, output_path: str) -> None:
     """Save benchmark results to JSON file."""
     output = Path(output_path)
     output.parent.mkdir(parents=True, exist_ok=True)
-    timestamp = datetime.now().strftime("%Y%m%d%H%M")
-    filename = f"{timestamp}_{output.stem}{output.suffix}"
-    filepath = output.parent / filename
     data = {
         "split": result.split,
         "mean_recall_at_10": result.mean_recall_at_10,
@@ -326,8 +322,8 @@ def save_results(result: BenchmarkResult, output_path: str) -> None:
         "total_queries": result.total_queries,
         "queries": result.queries,
     }
-    filepath.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
-    logger.info(f"Results saved to {filepath}")
+    output.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+    logger.info(f"Results saved to {output_path}")
 
 
 async def main() -> None:
