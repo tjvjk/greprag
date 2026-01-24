@@ -165,7 +165,7 @@ class GrepBenchmark:
             recall = recall_at_k(retrieved, gold, k=TOP_K)
             logger.info(
                 f"Query {identifier}: retrieved {len(retrieved)} docs, "
-                f"gold {len(gold)} docs, recall@{TOP_K}={recall:.3f}"
+                f"gold {len(gold)} docs, recall@k={recall:.3f}"
             )
             return AgentQueryResult(
                 query_id=identifier,
@@ -229,7 +229,7 @@ class GrepBenchmark:
                 ],
             )
             logger.info(
-                f"Benchmark complete: mean_recall@{TOP_K}={recall:.4f} "
+                f"Benchmark complete: mean_recall@k={recall:.4f} "
                 f"({len(results)} queries)"
             )
             return output
@@ -306,11 +306,11 @@ async def main() -> None:
             print(f"\n{'=' * 60}")
             print(f"GrepRAG Benchmark Results: {result.split}")
             print(f"{'=' * 60}")
-            print(f"Mean Recall@{TOP_K}: {result.mean_recall_at_k:.4f}")
+            print(f"Mean Recall@k: {result.mean_recall_at_k:.4f}")
             print(f"Evaluated queries: {result.evaluated_queries}")
             print(f"{'=' * 60}\n")
             for q in result.queries:
-                status = "ERROR" if q["error"] else f"R@{TOP_K}={q['recall_at_k']:.3f}"
+                status = "ERROR" if q["error"] else f"R@k={q['recall_at_k']:.3f}"
                 print(f"  [{q['query_id']}] {status}")
 
     finally:

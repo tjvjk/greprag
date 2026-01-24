@@ -201,11 +201,11 @@ def main() -> None:
         print(f"Vector Store Benchmark Results: {result.split}")
         print(f"{'=' * 60}")
         print(f"Method: {result.method}")
-        print(f"Mean Recall@{TOP_K}: {result.recall:.4f}")
+        print(f"Mean Recall@k: {result.recall:.4f}")
         print(f"Evaluated queries: {result.evaluated}")
         print(f"{'=' * 60}\n")
         for q in result.queries:
-            status = "ERROR" if q["error"] else f"R@{TOP_K}={q['recall_at_k']:.3f}"
+            status = "ERROR" if q["error"] else f"R@k={q['recall_at_k']:.3f}"
             print(f"  [{q['query_id']}] {status}")
 
 
