@@ -42,13 +42,13 @@ async def list_folder(folder: str) -> str:
     if not target.exists():
         target = base / folder_name
     if target.exists() and target.is_dir():
-        files = sorted([f.name for f in target.iterdir() if f.is_file()])
+        files = sorted([str(f) for f in target.iterdir() if f.is_file()])
         if files:
             return f"Files in {target.name}/:\n" + "\n".join(files)
     prefix = folder_name + "_"
-    matching = sorted([f.name for f in base.iterdir() if f.is_file() and f.name.startswith(prefix)])
+    matching = sorted([str(f) for f in base.iterdir() if f.is_file() and f.name.startswith(prefix)])
     if matching:
-        return f"Files matching {folder_name}/:\n" + "\n".join(matching)
+        return f"Files with prefix '{prefix}':\n" + "\n".join(matching)
     return f"No files found for: {folder}"
 
 

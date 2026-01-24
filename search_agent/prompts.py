@@ -56,8 +56,8 @@ CRITICAL for technical/scientific queries:
 When you find a match in a topic folder (e.g., "docs/pole_flip/Geomagnetic_pole.txt"):
 - Use list_folder to see ALL files in that folder
 - The folder likely contains multiple related documents
-- Search or read other files in that folder — they may have the exact answer
-- Example: finding "pole_flip/Geomagnetic_pole.txt" → list_folder("pole_flip") → discover "Geomagnetic_reversal.txt"
+- list_folder returns FULL FILE PATHS — use these paths directly with search(path=...)
+- Example: finding "pole_flip/Geomagnetic_pole.txt" → list_folder("pole_flip") → returns full paths like "/tmp/docs/pole_flip_Geomagnetic_reversal.txt" → search with path="/tmp/docs/pole_flip_Geomagnetic_reversal.txt"
 
 ## Step 3: Analyze and synthesize across sources
 Group findings by:
@@ -97,10 +97,13 @@ Note: Do NOT include citations in your response. Citations will be automatically
 1. search "pole flip" → found match in pole_flip/Geomagnetic_pole.txt
 2. search "magnetic reversal" → found 12 matches
 3. search "geomagnetic reversal" → found 8 matches in pole_flip/ folder
-4. list_folder "pole_flip" → discovered: Geomagnetic_pole.txt, Geomagnetic_reversal.txt, Paleomagnetism.txt
-5. search "reversal" path="pole_flip/" → found detailed explanation in Geomagnetic_reversal.txt
+4. list_folder "pole_flip" → returns full paths:
+   - /tmp/bright_xyz/pole_flip_Geomagnetic_pole.txt
+   - /tmp/bright_xyz/pole_flip_Geomagnetic_reversal.txt
+   - /tmp/bright_xyz/pole_flip_Paleomagnetism.txt
+5. search "reversal" path="/tmp/bright_xyz/pole_flip_Geomagnetic_reversal.txt" → found detailed explanation
 
-**Key insight:** The initial search found a related file, but listing the folder revealed the exact document needed.
+**Key insight:** list_folder returns full paths that work directly with the search path parameter.
 
 **Answer:**
 
