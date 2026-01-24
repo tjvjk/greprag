@@ -58,7 +58,7 @@ python search_agent/agent.py "What are the top technology trends for 2026?"
 
 ## Benchmark
 
-Evaluate search quality using the [BRIGHT](https://github.com/xlang-ai/BRIGHT) benchmark with Recall@10 metric.
+Evaluate search quality using the [BRIGHT](https://github.com/xlang-ai/BRIGHT) benchmark with Recall@K metric.
 
 ### GrepRAG Benchmark
 

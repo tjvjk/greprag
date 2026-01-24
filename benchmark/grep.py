@@ -25,6 +25,7 @@ from search_agent.agent import run_agent
 logger = logging.getLogger(__name__)
 
 CONCURRENCY = 20
+TOP_K = 20
 
 
 @dataclass
@@ -161,7 +162,7 @@ class GrepBenchmark:
             retrieved = self._extract(citations)
             logger.debug(f"Gold IDs: {gold[:5]}")
             logger.debug(f"Retrieved IDs (top 10): {retrieved[:10]}")
-            recall = recall_at_k(retrieved, gold, k=10)
+            recall = recall_at_k(retrieved, gold, k=TOP_K)
             logger.info(
                 f"Query {identifier}: retrieved {len(retrieved)} docs, "
                 f"gold {len(gold)} docs, recall@10={recall:.3f}"
@@ -209,7 +210,7 @@ class GrepBenchmark:
                 {"retrieved_ids": r.retrieved_ids, "gold_ids": r.gold_ids}
                 for r in results
             ]
-            recall = mean_recall_at_k(data, k=10)
+            recall = mean_recall_at_k(data, k=TOP_K)
             output = AgentBenchmarkResult(
                 split=self._split,
                 mean_recall_at_10=recall,

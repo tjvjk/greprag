@@ -28,6 +28,8 @@ from benchmark.vector_store.retriever import VectorRetriever
 
 logger = logging.getLogger(__name__)
 
+TOP_K = 20
+
 
 @final
 class VectorBenchmark(BaseBenchmark):
@@ -92,8 +94,8 @@ class VectorBenchmark(BaseBenchmark):
         gold = query["gold_ids"]
         logger.debug(f"Evaluating query {identifier}")
         try:
-            retrieved = self._retriever.retrieve(text, limit=10)
-            recall = recall_at_k(retrieved, gold, k=10)
+            retrieved = self._retriever.retrieve(text, limit=TOP_K)
+            recall = recall_at_k(retrieved, gold, k=TOP_K)
             return QueryResult(
                 identifier=identifier,
                 query=text,
@@ -128,7 +130,7 @@ class VectorBenchmark(BaseBenchmark):
             queries = queries[:limit]
         results = [self._evaluate(q) for q in queries]
         data = [{"retrieved_ids": r.retrieved, "gold_ids": r.gold} for r in results]
-        recall = mean_recall_at_k(data, k=10)
+        recall = mean_recall_at_k(data, k=TOP_K)
         return BenchmarkResult(
             split=self._split,
             method="vector_store",
