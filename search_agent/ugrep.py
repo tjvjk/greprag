@@ -4,7 +4,7 @@ from typing import final
 
 import settings
 
-MAX_OUTPUT_CHARS = 10000
+MAX_OUTPUT_CHARS = 30000
 
 
 class Search(ABC):

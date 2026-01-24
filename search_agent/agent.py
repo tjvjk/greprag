@@ -3,6 +3,7 @@ import json
 import logging
 import sys
 import time
+from pathlib import Path
 
 from openai import AsyncOpenAI
 
@@ -28,10 +29,27 @@ async def tree() -> str:
     )
     stdout, stderr = await proc.communicate()
     result = stdout.decode() if stdout else ""
-    # logger.debug(f"tree output:\n{result}")
     if stderr:
         logger.debug(f"tree stderr: {stderr.decode()}")
     return result
+
+
+async def list_folder(folder: str) -> str:
+    """List files in a folder within DOCS_FOLDER."""
+    base = Path(settings.DOCS_FOLDER)
+    folder_name = folder.split("/")[-1]
+    target = base / folder if not folder.startswith(str(base)) else Path(folder)
+    if not target.exists():
+        target = base / folder_name
+    if target.exists() and target.is_dir():
+        files = sorted([f.name for f in target.iterdir() if f.is_file()])
+        if files:
+            return f"Files in {target.name}/:\n" + "\n".join(files)
+    prefix = folder_name + "_"
+    matching = sorted([f.name for f in base.iterdir() if f.is_file() and f.name.startswith(prefix)])
+    if matching:
+        return f"Files matching {folder_name}/:\n" + "\n".join(matching)
+    return f"No files found for: {folder}"
 
 
 async def run_agent(query: str, max_iterations: int = 15) -> AgentResult:
@@ -90,6 +108,9 @@ async def run_agent(query: str, max_iterations: int = 15) -> AgentResult:
                     logger.info(f"Extracted {len(citations)} citations from search")
                 else:
                     logger.info("No matches found for this search")
+            elif tc.function.name == "list_folder":
+                result = await list_folder(args.get("folder", ""))
+                logger.info(f"list_folder: {result}...")
             else:
                 result = f"Unknown tool: {tc.function.name}"
             messages.append({"role": "tool", "tool_call_id": tc.id, "content": result})

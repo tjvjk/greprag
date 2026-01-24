@@ -20,4 +20,21 @@ TOOLS = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "list_folder",
+            "description": "List all files in a specific folder. Use this after finding relevant results to discover sibling files in the same topic folder that might contain additional relevant information.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "folder": {
+                        "type": "string",
+                        "description": "Path to the folder to list (e.g., 'docs/pole_flip' or just 'pole_flip')",
+                    },
+                },
+                "required": ["folder"],
+            },
+        },
+    },
 ]

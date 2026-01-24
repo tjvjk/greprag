@@ -26,7 +26,7 @@ from tests.metrics import mean_recall_at_k, recall_at_k
 
 logger = logging.getLogger(__name__)
 
-CONCURRENCY = 5
+CONCURRENCY = 20
 
 BRIGHT_SPLITS = [
     "biology",
