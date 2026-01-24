@@ -16,6 +16,7 @@ import logging
 import shutil
 import tempfile
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 
 from datasets import load_dataset
@@ -102,13 +103,13 @@ class BrightBenchmark:
         )
         documents_ds = load_dataset(
             "xlangai/BRIGHT",
-            "documents",
+            "long_documents",
             split=self.split,
         )
         queries = []
         for example in examples_ds:
             query_id = example.get("id", example.get("query_id", str(len(queries))))
-            gold_ids_raw = example.get("gold_ids", [])
+            gold_ids_raw = example.get("gold_ids_long", [])
             if isinstance(gold_ids_raw, str):
                 gold_ids = json.loads(gold_ids_raw)
             else:
@@ -315,7 +316,9 @@ def save_results(result: BenchmarkResult, output_path: str) -> None:
     """Save benchmark results to JSON file."""
     output = Path(output_path)
     output.parent.mkdir(parents=True, exist_ok=True)
-
+    timestamp = datetime.now().strftime("%Y%m%d%H%M")
+    filename = f"{timestamp}_{output.stem}{output.suffix}"
+    filepath = output.parent / filename
     data = {
         "split": result.split,
         "mean_recall_at_10": result.mean_recall_at_10,
@@ -323,9 +326,8 @@ def save_results(result: BenchmarkResult, output_path: str) -> None:
         "total_queries": result.total_queries,
         "queries": result.queries,
     }
-
-    output.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
-    logger.info(f"Results saved to {output_path}")
+    filepath.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+    logger.info(f"Results saved to {filepath}")
 
 
 async def main() -> None:
