@@ -26,6 +26,8 @@ from tests.metrics import mean_recall_at_k, recall_at_k
 
 logger = logging.getLogger(__name__)
 
+CONCURRENCY = 5
+
 BRIGHT_SPLITS = [
     "biology",
     "earth_science",
@@ -266,7 +268,7 @@ class BrightBenchmark:
         self._patch_settings()
 
         try:
-            sem = asyncio.Semaphore(5)
+            sem = asyncio.Semaphore(CONCURRENCY)
             async def limited(query_data: dict) -> QueryResult:
                 async with sem:
                     return await self.evaluate_query(query_data)
