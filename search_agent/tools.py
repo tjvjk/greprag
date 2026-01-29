@@ -20,4 +20,21 @@ TOOLS = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "list_folder",
+            "description": "List all files in a topic folder. Returns FULL FILE PATHS that can be used directly with search(path=...). Use after finding relevant results to discover sibling files.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "folder": {
+                        "type": "string",
+                        "description": "Topic folder name (e.g., 'pole_flip' or 'solid_inner_core')",
+                    },
+                },
+                "required": ["folder"],
+            },
+        },
+    },
 ]

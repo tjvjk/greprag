@@ -14,3 +14,7 @@ wheels/
 *.md
 *.pdf
 *.log
+*.log.*
+
+results/
+data/
